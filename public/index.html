@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>PictoChat locale</title>
+<style>
+  :root {
+    --ds-shell: #b9bec7;
+    --ds-dark: #23263a;
+    --ds-screen: #e8ecf0;
+    --accent: #3aa0ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: linear-gradient(160deg, #2b2f4a, #16182a);
+    color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+  }
+  .mono { font-family: "Courier New", monospace; font-weight: bold; }
+
+  /* ---------- schermata di ingresso ---------- */
+  #join {
+    background: var(--ds-shell);
+    border-radius: 18px;
+    padding: 24px;
+    width: min(360px, 100%);
+    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    text-align: center;
+  }
+  #join h1 {
+    font-size: 26px;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+    color: var(--ds-dark);
+  }
+  #join h1 span { color: var(--accent); }
+  #join p { font-size: 13px; color: #555; margin-bottom: 16px; }
+  #join input {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px 12px;
+    border: 2px solid var(--ds-dark);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    background: var(--ds-screen);
+  }
+  .room-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .room-btn {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 14px 0;
+    border: 2px solid var(--ds-dark);
+    border-radius: 10px;
+    background: var(--ds-screen);
+    cursor: pointer;
+  }
+  .room-btn:active { background: var(--accent); color: #fff; }
+
+  /* ---------- chat ---------- */
+  #chat {
+    display: none;
+    flex-direction: column;
+    width: min(560px, 100%);
+    height: min(860px, 100%);
+    background: var(--ds-shell);
+    border-radius: 18px;
+    padding: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+  }
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px 8px;
+    color: var(--ds-dark);
+  }
+  #topbar .title { font-size: 15px; letter-spacing: 1px; }
+  #topbar .title span { color: var(--accent); }
+  #topbar .status { font-size: 12px; }
+  #topbar .dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #e33; margin-right: 4px; vertical-align: 1px;
+  }
+  #topbar .dot.on { background: #2c2; }
+
+  /* schermo superiore: feed */
+  #feed {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    background: var(--ds-dark);
+    border: 3px solid #16182a;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .msg {
+    background: #fff;
+    border: 3px solid var(--accent);
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .msg .who {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    background: var(--accent);
+    padding: 2px 10px 3px 8px;
+    border-bottom-right-radius: 10px;
+  }
+  .msg img { display: block; width: 100%; image-rendering: pixelated; }
+  .sysmsg {
+    color: #9aa2c8; font-size: 12px; text-align: center; flex-shrink: 0;
+  }
+
+  /* schermo inferiore: composer */
+  #composer {
+    margin-top: 10px;
+    background: var(--ds-screen);
+    border: 3px solid #16182a;
+    border-radius: 10px;
+    padding: 8px;
+  }
+  #pad {
+    width: 100%;
+    border: 2px solid var(--ds-dark);
+    border-radius: 6px;
+    background: #fff;
+    touch-action: none;
+    display: block;
+    cursor: crosshair;
+  }
+  #toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .swatch {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid #888;
+    cursor: pointer;
+  }
+  .swatch.sel { border: 3px solid var(--ds-dark); transform: scale(1.15); }
+  .tool {
+    font-size: 13px;
+    font-weight: bold;
+    padding: 6px 10px;
+    border: 2px solid var(--ds-dark);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+  }
+  .tool.sel { background: var(--ds-dark); color: #fff; }
+  #send {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    border-color: #1c6fc0;
+    padding: 6px 18px;
+  }
+  #send:active { transform: scale(.95); }
+  #textrow { display: flex; gap: 6px; margin-top: 8px; }
+  #textin {
+    flex: 1;
+    font-size: 14px;
+    padding: 6px 10px;
+    border: 2px solid var(--ds-dark);
+    border-radius: 8px;
+    background: #fff;
+  }
+</style>
+</head>
+<body>
+
+<div id="join">
+  <h1 class="mono">Picto<span>Chat</span></h1>
+  <p>chat locale della band ✈️ — niente internet, niente problemi</p>
+  <input id="nick" maxlength="24" placeholder="Il tuo nome" autocomplete="off">
+  <div class="room-grid">
+    <button class="room-btn" data-room="A">Stanza A</button>
+    <button class="room-btn" data-room="B">Stanza B</button>
+    <button class="room-btn" data-room="C">Stanza C</button>
+    <button class="room-btn" data-room="D">Stanza D</button>
+  </div>
+</div>
+
+<div id="chat">
+  <div id="topbar">
+    <div class="title mono">Picto<span>Chat</span> · <span id="roomlabel"></span></div>
+    <div class="status"><span class="dot" id="dot"></span><span id="online">–</span> online</div>
+  </div>
+  <div id="feed"></div>
+  <div id="composer">
+    <canvas id="pad"></canvas>
+    <div id="toolbar">
+      <div class="swatch sel" data-color="#222222" style="background:#222"></div>
+      <div class="swatch" data-color="#e0322f" style="background:#e0322f"></div>
+      <div class="swatch" data-color="#2f7de0" style="background:#2f7de0"></div>
+      <div class="swatch" data-color="#2fa04a" style="background:#2fa04a"></div>
+      <div class="swatch" data-color="#e07a2f" style="background:#e07a2f"></div>
+      <div class="swatch" data-color="#a02fd0" style="background:#a02fd0"></div>
+      <button class="tool sel" id="pen-s">✏️ fine</button>
+      <button class="tool" id="pen-l">🖊️ grosso</button>
+      <button class="tool" id="eraser">🩹 gomma</button>
+      <button class="tool" id="undo">↩️</button>
+      <button class="tool" id="clear">🗑️</button>
+      <button class="tool" id="send">Invia ▶</button>
+    </div>
+    <div id="textrow">
+      <input id="textin" maxlength="60" placeholder="Testo da timbrare sul disegno…" autocomplete="off">
+      <button class="tool" id="stamp">Timbra</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const PAD_W = 460, PAD_H = 170;
+
+  let name = '', room = '', myColor = '#3aa0ff';
+  let es = null;
+  const seen = new Set();
+
+  // colore personale derivato dal nome, così ognuno ha il suo bordo
+  function colorFor(n) {
+    let h = 0;
+    for (const c of n) h = (h * 31 + c.charCodeAt(0)) % 360;
+    const f = (x) => {
+      const k = (x + h / 30) % 12;
+      const v = 0.55 - 0.35 * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+      return Math.round(v * 255).toString(16).padStart(2, '0');
+    };
+    return '#' + f(0) + f(8) + f(4);
+  }
+
+  /* ---------- ingresso ---------- */
+  const savedNick = localStorage.getItem('picto-nick');
+  if (savedNick) $('#nick').value = savedNick;
+
+  document.querySelectorAll('.room-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const n = $('#nick').value.trim();
+      if (!n) { $('#nick').focus(); return; }
+      name = n;
+      myColor = colorFor(n);
+      localStorage.setItem('picto-nick', n);
+      room = btn.dataset.room;
+      $('#join').style.display = 'none';
+      $('#chat').style.display = 'flex';
+      $('#roomlabel').textContent = 'Stanza ' + room;
+      setupPad();
+      connect();
+    });
+  });
+
+  /* ---------- collegamento SSE ---------- */
+  function connect() {
+    es = new EventSource('/events?room=' + encodeURIComponent(room));
+    es.onopen = () => $('#dot').classList.add('on');
+    es.onerror = () => $('#dot').classList.remove('on'); // EventSource ritenta da solo
+    es.addEventListener('presence', (e) => {
+      $('#online').textContent = JSON.parse(e.data).online;
+    });
+    es.addEventListener('msg', (e) => {
+      const m = JSON.parse(e.data);
+      if (seen.has(m.id)) return; // le riconnessioni rimandano lo storico
+      seen.add(m.id);
+      addMessage(m);
+    });
+  }
+
+  const feed = $('#feed');
+  function addMessage(m) {
+    const nearBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 60;
+    const div = document.createElement('div');
+    div.className = 'msg';
+    div.style.borderColor = m.color;
+    const who = document.createElement('span');
+    who.className = 'who';
+    who.style.background = m.color;
+    who.textContent = m.name;
+    const img = document.createElement('img');
+    img.src = m.image;
+    div.append(who, img);
+    feed.appendChild(div);
+    if (nearBottom || m.name === name) feed.scrollTop = feed.scrollHeight;
+    if (m.name !== name) blip();
+  }
+
+  // bip stile DS all'arrivo di un messaggio
+  let audioCtx = null;
+  function blip() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const t = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, t);
+      osc.frequency.setValueAtTime(1320, t + 0.07);
+      gain.gain.setValueAtTime(0.04, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.16);
+    } catch { /* audio bloccato: pazienza */ }
+  }
+
+  /* ---------- canvas di disegno ---------- */
+  const pad = $('#pad');
+  const ctx = pad.getContext('2d');
+  let penColor = '#222222', penSize = 3, erasing = false;
+  let drawing = false, hasInk = false, textY = 22;
+  const undoStack = [];
+
+  function setupPad() {
+    const dpr = window.devicePixelRatio || 1;
+    pad.width = PAD_W * dpr;
+    pad.height = PAD_H * dpr;
+    pad.style.aspectRatio = PAD_W + '/' + PAD_H;
+    ctx.scale(dpr, dpr);
+    ctx.lineCap = ctx.lineJoin = 'round';
+    clearPad();
+  }
+
+  function clearPad() {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, PAD_W, PAD_H);
+    hasInk = false;
+    textY = 22;
+  }
+
+  function padPos(e) {
+    const r = pad.getBoundingClientRect();
+    return {
+      x: (e.clientX - r.left) * (PAD_W / r.width),
+      y: (e.clientY - r.top) * (PAD_H / r.height),
+    };
+  }
+
+  function pushUndo() {
+    undoStack.push(ctx.getImageData(0, 0, pad.width, pad.height));
+    if (undoStack.length > 25) undoStack.shift();
+  }
+
+  pad.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    pad.setPointerCapture(e.pointerId);
+    pushUndo();
+    drawing = true;
+    hasInk = true;
+    const p = padPos(e);
+    ctx.strokeStyle = erasing ? '#ffffff' : penColor;
+    ctx.lineWidth = erasing ? 18 : penSize;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + 0.01, p.y + 0.01); // punto singolo
+    ctx.stroke();
+  });
+  pad.addEventListener('pointermove', (e) => {
+    if (!drawing) return;
+    const p = padPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  });
+  const stopDraw = () => { drawing = false; };
+  pad.addEventListener('pointerup', stopDraw);
+  pad.addEventListener('pointercancel', stopDraw);
+
+  /* ---------- strumenti ---------- */
+  document.querySelectorAll('.swatch').forEach((sw) => {
+    sw.addEventListener('click', () => {
+      document.querySelector('.swatch.sel')?.classList.remove('sel');
+      sw.classList.add('sel');
+      penColor = sw.dataset.color;
+      setEraser(false);
+    });
+  });
+
+  function setEraser(on) {
+    erasing = on;
+    $('#eraser').classList.toggle('sel', on);
+    if (on) {
+      $('#pen-s').classList.remove('sel');
+      $('#pen-l').classList.remove('sel');
+    }
+  }
+  $('#eraser').addEventListener('click', () => setEraser(!erasing));
+  $('#pen-s').addEventListener('click', () => {
+    penSize = 3; setEraser(false);
+    $('#pen-s').classList.add('sel'); $('#pen-l').classList.remove('sel');
+  });
+  $('#pen-l').addEventListener('click', () => {
+    penSize = 8; setEraser(false);
+    $('#pen-l').classList.add('sel'); $('#pen-s').classList.remove('sel');
+  });
+  $('#undo').addEventListener('click', () => {
+    const img = undoStack.pop();
+    if (img) ctx.putImageData(img, 0, 0);
+  });
+  $('#clear').addEventListener('click', () => { pushUndo(); clearPad(); });
+
+  function stampText() {
+    const t = $('#textin').value.trim();
+    if (!t) return;
+    pushUndo();
+    ctx.fillStyle = penColor;
+    ctx.font = 'bold 17px "Courier New", monospace';
+    ctx.fillText(t, 8, textY, PAD_W - 16);
+    textY += 22;
+    if (textY > PAD_H - 6) textY = 22;
+    hasInk = true;
+    $('#textin').value = '';
+  }
+  $('#stamp').addEventListener('click', stampText);
+  $('#textin').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); stampText(); }
+  });
+
+  /* ---------- invio ---------- */
+  let sending = false;
+  $('#send').addEventListener('click', async () => {
+    if (!hasInk || sending) return;
+    sending = true;
+    try {
+      const image = pad.toDataURL('image/png');
+      const resp = await fetch('/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room, name, color: myColor, image }),
+      });
+      if (resp.ok) {
+        undoStack.length = 0;
+        clearPad();
+      }
+    } catch {
+      const div = document.createElement('div');
+      div.className = 'sysmsg';
+      div.textContent = '⚠️ invio fallito, riprova';
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+    } finally {
+      sending = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
