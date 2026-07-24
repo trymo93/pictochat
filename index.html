@@ -67,7 +67,8 @@
   .hint { font-size: 12.5px; color: #555; margin-top: 10px; line-height: 1.45; }
   .step { font-size: 14px; font-weight: bold; color: var(--ds-dark); margin: 14px 0 6px; }
   .qr-box { text-align: center; margin-top: 8px; }
-  .qr-box img { width: min(260px, 80%); image-rendering: pixelated; border: 8px solid #fff; border-radius: 8px; }
+  .qr-box img { width: min(360px, 94%); image-rendering: pixelated; border: 8px solid #fff; border-radius: 8px; }
+  .qr-note { font-size: 12.5px; color: #555; text-align: center; margin-top: 6px; line-height: 1.4; }
   video#scanvid {
     width: 100%;
     border-radius: 10px;
@@ -211,15 +212,19 @@
   <div id="pair-host" style="display:none">
     <div class="step">1 · Fai inquadrare questo QR a chi entra</div>
     <div class="qr-box"><img id="offer-qr" alt="QR invito"></div>
-    <div class="step">2 · Poi inquadra il QR di risposta che apparirà sul suo telefono</div>
+    <p class="qr-note">⚠️ Non con la fotocamera del telefono: l'altro deve aprire
+    l'app e toccare <b>🤝 Unisciti al gruppo</b> — l'inquadratura si apre da sola.</p>
+    <div class="step">2 · Poi inquadra qui sotto il QR di risposta che apparirà sul suo telefono</div>
   </div>
   <div id="pair-guest" style="display:none">
     <div id="guest-step1">
-      <div class="step">Inquadra il QR di chi ha creato il gruppo</div>
+      <div class="step">Punta l'inquadratura qui sotto sullo schermo di chi ha creato il gruppo</div>
     </div>
     <div id="guest-step2" style="display:none">
-      <div class="step">Ora fai inquadrare questo QR a chi ha creato il gruppo</div>
+      <div class="step">Ora mostra questo QR a chi ha creato il gruppo</div>
       <div class="qr-box"><img id="answer-qr" alt="QR risposta"></div>
+      <p class="qr-note">Lui lo inquadra con la fotocamera già aperta nella sua app —
+      appena lo legge, siete collegati.</p>
     </div>
   </div>
   <video id="scanvid" playsinline muted></video>
@@ -316,7 +321,12 @@ var qrcode=(function(){var P=function(x,w){var g=236,l=17,n=x,s=O[w],t=null,r=0,
     });
   }
 
-  const encodeCode = (type, sdp) => JSON.stringify({ picto: 1, type, sdp });
+  // Toglie dall'SDP le righe inutili per noi (candidati TCP): QR più piccolo
+  // e quindi molto più facile da inquadrare.
+  const slimSdp = (sdp) =>
+    sdp.split('\r\n').filter((l) => !(l.startsWith('a=candidate:') && l.includes(' tcp '))).join('\r\n');
+
+  const encodeCode = (type, sdp) => JSON.stringify({ picto: 1, type, sdp: slimSdp(sdp) });
   function decodeCode(str) {
     try {
       const o = JSON.parse(str.trim());
@@ -329,7 +339,7 @@ var qrcode=(function(){var P=function(x,w){var g=236,l=17,n=x,s=O[w],t=null,r=0,
     const qr = qrcode(0, 'L');
     qr.addData(text, 'Byte');
     qr.make();
-    $(imgSel).src = qr.createDataURL(4, 8);
+    $(imgSel).src = qr.createDataURL(6, 12);
     $('#code-out').value = text;
   }
 
@@ -490,23 +500,48 @@ var qrcode=(function(){var P=function(x,w){var g=236,l=17,n=x,s=O[w],t=null,r=0,
     video.srcObject = scanStream;
     video.style.display = 'block';
     await video.play().catch(() => {});
+
+    // Lettore nativo del sistema quando c'è (molto più robusto), jsQR di riserva.
+    let detector = null;
+    if ('BarcodeDetector' in window) {
+      try {
+        const formats = await window.BarcodeDetector.getSupportedFormats();
+        if (formats.includes('qr_code')) {
+          detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+        }
+      } catch {}
+    }
+
     const c = document.createElement('canvas');
     const cx = c.getContext('2d', { willReadFrequently: true });
     scanRun = true;
-    const tick = () => {
+    let busy = false;
+    const tick = async () => {
       if (!scanRun) return;
-      if (video.videoWidth) {
-        c.width = video.videoWidth;
-        c.height = video.videoHeight;
-        cx.drawImage(video, 0, 0);
-        const d = cx.getImageData(0, 0, c.width, c.height);
-        const q = jsQR(d.data, c.width, c.height);
-        if (q && q.data) {
-          const o = decodeCode(q.data);
+      if (video.videoWidth && !busy) {
+        busy = true;
+        let text = null;
+        try {
+          if (detector) {
+            const codes = await detector.detect(video).catch(() => []);
+            if (codes.length) text = codes[0].rawValue;
+          } else {
+            // fotogramma ridotto: decodifica più veloce e più stabile sui telefoni
+            const scale = Math.min(1, 720 / video.videoWidth);
+            c.width = Math.round(video.videoWidth * scale);
+            c.height = Math.round(video.videoHeight * scale);
+            cx.drawImage(video, 0, 0, c.width, c.height);
+            const d = cx.getImageData(0, 0, c.width, c.height);
+            const q = jsQR(d.data, c.width, c.height, { inversionAttempts: 'dontInvert' });
+            if (q) text = q.data;
+          }
+        } finally { busy = false; }
+        if (text) {
+          const o = decodeCode(text);
           if (o && o.type === expectType) { onCode(o); return; }
         }
       }
-      requestAnimationFrame(tick);
+      setTimeout(() => requestAnimationFrame(tick), 120);
     };
     tick();
   }
