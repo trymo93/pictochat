@@ -489,7 +489,11 @@ var qrcode=(function(){var P=function(x,w){var g=236,l=17,n=x,s=O[w],t=null,r=0,
     const video = $('#scanvid');
     try {
       scanStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       });
     } catch {
       $('#pair-status').textContent =
@@ -516,16 +520,21 @@ var qrcode=(function(){var P=function(x,w){var g=236,l=17,n=x,s=O[w],t=null,r=0,
     const cx = c.getContext('2d', { willReadFrequently: true });
     scanRun = true;
     let busy = false;
+    let frame = 0;
     const tick = async () => {
       if (!scanRun) return;
       if (video.videoWidth && !busy) {
         busy = true;
         let text = null;
         try {
+          // Su alcuni telefoni il rilevatore di sistema esiste ma non rileva mai:
+          // i due lettori lavorano in parallelo, il primo che decodifica vince.
           if (detector) {
-            const codes = await detector.detect(video).catch(() => []);
-            if (codes.length) text = codes[0].rawValue;
-          } else {
+            const codes = await detector.detect(video).catch(() => null);
+            if (codes === null) detector = null; // rotto: d'ora in poi solo jsQR
+            else if (codes.length) text = codes[0].rawValue;
+          }
+          if (!text && (!detector || frame % 2 === 0)) {
             // fotogramma ridotto: decodifica più veloce e più stabile sui telefoni
             const scale = Math.min(1, 720 / video.videoWidth);
             c.width = Math.round(video.videoWidth * scale);
@@ -535,6 +544,7 @@ var qrcode=(function(){var P=function(x,w){var g=236,l=17,n=x,s=O[w],t=null,r=0,
             const q = jsQR(d.data, c.width, c.height, { inversionAttempts: 'dontInvert' });
             if (q) text = q.data;
           }
+          frame++;
         } finally { busy = false; }
         if (text) {
           const o = decodeCode(text);
